@@ -22,14 +22,12 @@ class Environment:
         return self.curr_state
 
     def reset(self) -> tuple[int, int]:
-        self.curr_state = (0, 0)
-        return self.states[(0, 0)]
+        return (0, 0)
 
     def execute_action(self, action: str) -> tuple[int, tuple[int, int], bool]:
         """
         Returns reward, next state, finished
         """
-        print(action)
         if action == "LEFT":
             if self.curr_state[0] == 0:
                 return -1, self.curr_state, False
@@ -62,7 +60,7 @@ class Environment:
 
         if self.curr_state in self.negative_states:
             return -10, self.curr_state, True
-        if self.curr_state in self.reward_state:
+        if self.curr_state == self.reward_state:
             return 10, self.curr_state, True
 
         return -1, self.curr_state, False

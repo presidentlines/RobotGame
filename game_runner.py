@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pygame
 import plotly.graph_objects as go
+from time import sleep
 
 from obstacles import Obstacle
 from player_agent import Player
@@ -23,9 +24,6 @@ from constants import (
 
 class GameRunner:
     def __init__(self):
-        pass
-
-        # Initialize Pygame
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Obstacle Chase!")
@@ -57,15 +55,16 @@ class GameRunner:
         # Game loop
         running = True
         while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
 
             game_end = False
             curr_state = self.environment.reset()
             cum_rewards = [0]
 
-            while not game_end:
+            while not game_end and running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+
                 possibilities = [
                     pygame.K_UP,
                     pygame.K_DOWN,
@@ -73,50 +72,53 @@ class GameRunner:
                     pygame.K_RIGHT,
                 ]
                 keys = pygame.key.get_pressed()
-                # draw screen
-                self.screen.fill(BLACK)
-                self.draw_lines(
-                    num_rows=self.num_rows, num_cols=self.num_cols, grid_color=WHITE
-                )
-                {obstacle.draw(self.screen) for obstacle in self.obstacles}
-                self.player.draw(self.screen, curr_state)
                 if any([keys[p] for p in possibilities]):
-                    if keys:
-                        dt = self.clock.tick(self.fps)
-                        print(dt)
-                        # Get player input
-                        if keys[pygame.K_UP]:
-                            reward, next_state, game_end = (
-                                self.environment.execute_action("UP")
-                            )
-                        if keys[pygame.K_DOWN]:
-                            reward, next_state, game_end = (
-                                self.environment.execute_action("DOWN")
-                            )
-                        if keys[pygame.K_LEFT]:
-                            reward, next_state, game_end = (
-                                self.environment.execute_action("LEFT")
-                            )
-                        if keys[pygame.K_RIGHT]:
-                            reward, next_state, game_end = (
-                                self.environment.execute_action("RIGHT")
-                            )
-                        print(next_state)
-                        print(reward, next_state, game_end)
-                        cum_rewards.append(cum_rewards[-1] + reward)
+                    event = pygame.event.get()
+                    dt = self.clock.tick(self.fps)
+                    # Get player input
+                    if keys[pygame.K_UP]:
+                        reward, next_state, game_end = self.environment.execute_action(
+                            "UP"
+                        )
+                    if keys[pygame.K_DOWN]:
+                        reward, next_state, game_end = self.environment.execute_action(
+                            "DOWN"
+                        )
+                    if keys[pygame.K_LEFT]:
+                        reward, next_state, game_end = self.environment.execute_action(
+                            "LEFT"
+                        )
+                    if keys[pygame.K_RIGHT]:
+                        reward, next_state, game_end = self.environment.execute_action(
+                            "RIGHT"
+                        )
+                    sleep(0.1)
 
-                        if game_end:
-                            self.plot_rewards(cum_rewards)
-                        curr_state = next_state
-                # Update screen
-                pygame.display.flip()
+                    curr_state = next_state
+                    cum_rewards.append(cum_rewards[-1] + reward)
+
+                    if game_end:
+                        self.plot_rewards(cum_rewards)
+
+                self.draw_game_screen(self.environment.states[curr_state])
+
+    def draw_game_screen(self, curr_location):
+        self.screen.fill(BLACK)
+        self.draw_lines(
+            num_rows=self.num_rows, num_cols=self.num_cols, grid_color=WHITE
+        )
+        for obstacle in self.obstacles:
+            obstacle.draw(self.screen)
+        self.player.draw(self.screen, curr_location)
+        pygame.display.flip()
 
     def plot_rewards(self, rewards):
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=list(range(rewards)), y=rewards))
+        fig.add_trace(go.Scatter(x=list(range(len(rewards))), y=rewards))
         fig.update_layout(title_text="Cumulative Rewards")
-        fig.update_yaxes(text="Rewards")
-        fig.update_xaxes(text="Iterations")
+        fig.update_yaxes(title_text="Rewards")
+        fig.update_xaxes(title_text="Iterations")
+        fig.show()
 
     def draw_lines(self, num_rows, num_cols, grid_color):
         cell_size = 197
