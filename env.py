@@ -22,7 +22,8 @@ class Environment:
         return self.curr_state
 
     def reset(self) -> tuple[int, int]:
-        return (0, 0)
+        self.curr_state = (0, 0)
+        return self.curr_state
 
     def execute_action(self, action: str) -> tuple[int, tuple[int, int], bool]:
         """

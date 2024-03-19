@@ -54,53 +54,49 @@ class GameRunner:
     def run_game(self):
         # Game loop
         running = True
+        game_end = False
+        curr_state = self.environment.reset()
+        cum_rewards = [0]
         while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            possibilities = [
+                pygame.K_UP,
+                pygame.K_DOWN,
+                pygame.K_LEFT,
+                pygame.K_RIGHT,
+            ]
+            keys = pygame.key.get_pressed()
+            if any([keys[p] for p in possibilities]):
+                event = pygame.event.get()
+                dt = self.clock.tick(self.fps)
+                # Get player input
+                if keys[pygame.K_UP]:
+                    reward, next_state, game_end = self.environment.execute_action("UP")
+                if keys[pygame.K_DOWN]:
+                    reward, next_state, game_end = self.environment.execute_action(
+                        "DOWN"
+                    )
+                if keys[pygame.K_LEFT]:
+                    reward, next_state, game_end = self.environment.execute_action(
+                        "LEFT"
+                    )
+                if keys[pygame.K_RIGHT]:
+                    reward, next_state, game_end = self.environment.execute_action(
+                        "RIGHT"
+                    )
+                sleep(0.1)
 
-            game_end = False
-            curr_state = self.environment.reset()
-            cum_rewards = [0]
+                curr_state = next_state
+                cum_rewards.append(cum_rewards[-1] + reward)
 
-            while not game_end and running:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        running = False
-
-                possibilities = [
-                    pygame.K_UP,
-                    pygame.K_DOWN,
-                    pygame.K_LEFT,
-                    pygame.K_RIGHT,
-                ]
-                keys = pygame.key.get_pressed()
-                if any([keys[p] for p in possibilities]):
-                    event = pygame.event.get()
-                    dt = self.clock.tick(self.fps)
-                    # Get player input
-                    if keys[pygame.K_UP]:
-                        reward, next_state, game_end = self.environment.execute_action(
-                            "UP"
-                        )
-                    if keys[pygame.K_DOWN]:
-                        reward, next_state, game_end = self.environment.execute_action(
-                            "DOWN"
-                        )
-                    if keys[pygame.K_LEFT]:
-                        reward, next_state, game_end = self.environment.execute_action(
-                            "LEFT"
-                        )
-                    if keys[pygame.K_RIGHT]:
-                        reward, next_state, game_end = self.environment.execute_action(
-                            "RIGHT"
-                        )
-                    sleep(0.1)
-
-                    curr_state = next_state
-                    cum_rewards.append(cum_rewards[-1] + reward)
-
-                    if game_end:
-                        self.plot_rewards(cum_rewards)
-
-                self.draw_game_screen(self.environment.states[curr_state])
+                if game_end:
+                    self.plot_rewards(cum_rewards)
+                    game_end = False
+                    curr_state = self.environment.reset()
+                    cum_rewards = [0]
+            self.draw_game_screen(self.environment.states[curr_state])
 
     def draw_game_screen(self, curr_location):
         self.screen.fill(BLACK)
